@@ -1,0 +1,20 @@
+{
+    "name": "multicall-indexer",
+    "version": "0.1.0",
+    "description": "⚙️ Backend multicall indexer for cetra pools.",
+    "main": "index.js",
+    "repository": "https://github.com/cetra-finance/multicall-indexer",
+    "author": "b3zrazli4n0 <b3zrazli4n0@gmail.com>",
+    "license": "MIT",
+    "private": false,
+    "scripts": {
+        "build": "yarn tsc",
+        "fmt:fix": "yarn prettier --write .",
+        "fmt:check": "yarn prettier --check ."
+    },
+    "devDependencies": {
+        "@vercel/node": "^2.9.7",
+        "prettier": "^2.8.4",
+        "typescript": "^4.9.5"
+    }
+}

@@ -7,9 +7,10 @@ import {
 import { ethers } from "ethers";
 import { BigNumber } from "bignumber.js";
 import { PrismaClient } from "@prisma/client";
+import { verifySignature } from "@upstash/qstash/nextjs";
 import ChamberV1ABI from "../abis/ChamberV1.json";
 
-export default async (req: VercelRequest, resp: VercelResponse) => {
+async function handler(req: VercelRequest, resp: VercelResponse) {
     const RPC_ENDPOINT = process.env.RPC_ENDPOINT ?? "";
     const POOL_ADDRESS = process.env.POOL_ADDRESS ?? "";
 
@@ -72,4 +73,6 @@ export default async (req: VercelRequest, resp: VercelResponse) => {
             error: error.toString(),
         });
     }
-};
+}
+
+export default verifySignature(handler);

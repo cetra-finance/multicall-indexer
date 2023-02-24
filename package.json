@@ -1,5 +1,5 @@
 {
-    "name": "multicall-indexer",
+    "name": "cetra-multicall-indexer",
     "version": "0.1.0",
     "description": "⚙️ Backend multicall indexer for cetra pools.",
     "main": "index.js",

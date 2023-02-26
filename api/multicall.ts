@@ -8,26 +8,34 @@ import { ethers } from "ethers";
 import { BigNumber } from "bignumber.js";
 import { PrismaClient } from "@prisma/client";
 import { verifySignature } from "@upstash/qstash/nextjs";
-import ChamberV1ABI from "../abis/ChamberV1.json";
+import IChamberV1ABI from "../abis/IChamberV1.json";
+
+const POOLS = [
+    // MATIC - LINK
+    "0x8E756cAad37136Df14Eb42Dc4BCb211D4aFC3E5B",
+    // MATIC - CRV
+    "0x8d342020D9e452e129B4C40a7e1d754e1d1b124f",
+    // LINK - ETH
+    "0xaBFe2C02c1dbE04672de1e330b17288116945a67",
+];
 
 async function handler(req: VercelRequest, resp: VercelResponse) {
     const RPC_ENDPOINT = process.env.RPC_ENDPOINT ?? "";
-    const POOL_ADDRESS = process.env.POOL_ADDRESS ?? "";
 
     try {
         const dbClient = new PrismaClient();
         const provider = new ethers.JsonRpcProvider(RPC_ENDPOINT);
         const multicall = new Multicall({ nodeUrl: RPC_ENDPOINT });
 
-        const callContext: ContractCallContext[] = [
-            {
-                reference: POOL_ADDRESS,
-                contractAddress: POOL_ADDRESS,
-                abi: ChamberV1ABI,
+        const callContext: ContractCallContext[] = POOLS.map((address) => {
+            return {
+                reference: address,
+                contractAddress: address,
+                abi: IChamberV1ABI,
                 calls: [
                     {
-                        reference: "s_totalSharesCall",
-                        methodName: "s_totalShares",
+                        reference: "get_s_totalSharesCall",
+                        methodName: "get_s_totalShares",
                         methodParameters: [],
                     },
                     {
@@ -36,33 +44,39 @@ async function handler(req: VercelRequest, resp: VercelResponse) {
                         methodParameters: [],
                     },
                 ],
-            },
-        ];
+            };
+        });
 
         const callContextResults: ContractCallResults = await multicall.call(
             callContext
         );
-        const callContextReturns =
-            callContextResults.results[POOL_ADDRESS].callsReturnContext;
 
-        const blockNumber = callContextResults.blockNumber;
-        const block = await provider.getBlock(blockNumber, false);
-        const blockTimestamp = block ? block.timestamp : 0;
-        const totalShares = new BigNumber(
-            callContextReturns[0].returnValues[0].hex
-        );
-        const currentUsdBalance = new BigNumber(
-            callContextReturns[1].returnValues[0].hex
-        );
+        const poolsResults = [];
+        for (const address of POOLS) {
+            const callContextReturns =
+                callContextResults.results[address].callsReturnContext;
 
-        const pools = await dbClient.pools.create({
-            data: {
-                address: POOL_ADDRESS,
+            const blockNumber = callContextResults.blockNumber;
+            const block = await provider.getBlock(blockNumber, false);
+            const blockTimestamp = block ? block.timestamp : 0;
+            const totalShares = new BigNumber(
+                callContextReturns[0].returnValues[0].hex
+            );
+            const currentUsdBalance = new BigNumber(
+                callContextReturns[1].returnValues[0].hex
+            );
+
+            poolsResults.push({
+                address: address,
                 block: blockNumber,
                 blockTime: new Date(blockTimestamp * 1e3),
                 totalShares: totalShares.toString(),
                 currentUsdBalance: currentUsdBalance.toString(),
-            },
+            });
+        }
+
+        const pools = await dbClient.pools.createMany({
+            data: poolsResults,
         });
 
         resp.status(200).json({

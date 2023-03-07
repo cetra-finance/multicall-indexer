@@ -11,16 +11,12 @@ import { verifySignature } from "@upstash/qstash/nextjs";
 import IChamberV1ABI from "../abis/IChamberV1.json";
 
 const POOLS = [
-    // MATIC - LINK
-    "0x8E756cAad37136Df14Eb42Dc4BCb211D4aFC3E5B",
-    // MATIC - CRV
-    "0x8d342020D9e452e129B4C40a7e1d754e1d1b124f",
-    // LINK - ETH
-    "0xaBFe2C02c1dbE04672de1e330b17288116945a67",
+    // ETH - SNX
+    "0x4f46191bc4865813cbd2ea583046bea165b7af8f",
 ];
 
 async function handler(req: VercelRequest, resp: VercelResponse) {
-    const RPC_ENDPOINT = process.env.RPC_ENDPOINT ?? "";
+    const RPC_ENDPOINT = process.env.OPTIMISM_RPC_ENDPOINT ?? "";
 
     try {
         const dbClient = new PrismaClient();
@@ -75,7 +71,7 @@ async function handler(req: VercelRequest, resp: VercelResponse) {
             });
         }
 
-        const pools = await dbClient.pools.createMany({
+        const pools = await dbClient.optimismPool.createMany({
             data: poolsResults,
         });
 
